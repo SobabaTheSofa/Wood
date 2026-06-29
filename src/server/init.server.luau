@@ -19,7 +19,7 @@ game:GetService("ReplicatedStorage"):WaitForChild("A1").OnServerEvent:Connect(fu
 	end
 end)
 
-local Zone = ZoneConstructorwhateverheythatrythme.new({
+local Zone = ZoneConstructor.new({
 	workspace.aaa,
 	--workspace.bbb,
 	workspace.ccc,

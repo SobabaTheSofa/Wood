@@ -120,7 +120,7 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 	local self = setmetatable({}, TreeConc)
 
 	local class
-	print(TreeDictionary)
+
 	if typeof(Class) == "string" then
 		class = TreeDictionary[Class]
 	end
