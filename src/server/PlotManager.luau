@@ -4,15 +4,15 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local PlacementClass = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("PlacementSystem"))
-
-local ServerModules = ServerScriptService:WaitForChild("ServerModules")
+local PlacementClass = require(
+	ReplicatedStorage:WaitForChild("Modules"):WaitForChild("PlacementSystem"):WaitForChild("PlacmentSystemMain")
+)
 
 local Plot = ReplicatedStorage:WaitForChild("Plot"):WaitForChild("Plot")
 local Objects = ReplicatedStorage:WaitForChild("Objects")
 local LooseObjects = ReplicatedStorage:WaitForChild("LooseObjects")
 
-local DataManager = require(ServerModules.DataManager)
+local DataManager = require(script.Parent.DataManager)
 
 local PlotManager = {}
 
