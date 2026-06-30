@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Store profiles from ProfileStore
 DataManager.Profiles = {}
+DataManager.GeneralData = {}
 
 function DataManager:WaitForProfile(player, timeout)
 	timeout = timeout or 5

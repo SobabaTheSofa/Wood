@@ -1,5 +1,6 @@
 local Constructor, TCSS = require(script:WaitForChild("TreeConstructor")):Init()
 local ZoneConstructor = require(script:WaitForChild("ZoneConStructor")):Init(Constructor)
+Constructor = nil
 
 game:GetService("ReplicatedStorage"):WaitForChild("A1").OnServerEvent:Connect(function(player, hitData, Notch)
 	if hitData then
@@ -48,7 +49,7 @@ local PlotManager = require(script.PlotManager)
 local Template = require(Libaries.Template)
 
 -- Access profile store
-local PlayerStore = ProfileStore.New(GetStoreName(), Template)
+local PlayerStore = ProfileStore.New(GetStoreName() .. "Plot_1", Template)
 
 local PlacementClass = require(
 	ReplicatedStorage:WaitForChild("Modules"):WaitForChild("PlacementSystem"):WaitForChild("PlacmentSystemMain")
