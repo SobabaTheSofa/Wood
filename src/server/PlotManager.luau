@@ -14,10 +14,10 @@ local LooseObjects = ReplicatedStorage:WaitForChild("LooseObjects")
 
 local DataManager = require(script.Parent.DataManager)
 
-local Labaries = require(script.Parent:WaitForChild("ServerLibaries"))
+local Labaries = script.Parent:WaitForChild("ServerLibaries")
 
-local profileStore = Labaries.ProfileStore
-local PlotTemplate = Labaries.Template
+local ProfileStore = require(Labaries.ProfileStore)
+local PlotTemplate = require(Labaries.Template)
 
 local PlotManager = {}
 
@@ -28,8 +28,8 @@ local function GetStoreName(plotNumber)
 	if plotNumber == 1 or 2 or 3 then
 		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. plotNumber)
 	else
-		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. "1")
 		warn("Invalid plot number provided. Defaulting to 'Test_Plot_1'.")
+		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. "1")
 	end
 end
 
@@ -103,86 +103,88 @@ function PlotManager:Load(player, plotNumber)
 		warn("Player already has a plot loaded.")
 		--return self.PlayersProfiles[player]
 	else
-		local PlayerStore = profileStore:GetProfileStore(GetStoreName(plotNumber), PlotTemplate)
+		local PlayerStore = ProfileStore.New(GetStoreName(1), PlotTemplate)
 		local profile = PlayerStore:StartSessionAsync("Player_" .. player.UserId, {
-		Cancel = function()
-			return player.Parent ~= Players
-		end,
-	})
+			Cancel = function()
+				return player.Parent ~= Players
+			end,
+		})
 
-	if profile ~= nil then
-		profile:AddUserId(player.UserId) -- GDPR compliance
-		profile:Reconcile() -- Fill in missing data variables from template
+		if profile ~= nil then
+			profile:AddUserId(player.UserId) -- GDPR compliance
+			profile:Reconcile() -- Fill in missing data variables from template
 
-		-- Handles session-locking
-		profile.OnSessionEnd:Connect(function()
-			self.PlayersProfiles[player] = nil
-			player:Kick("Data error occured. Please rejoin.")
-		end)
+			-- Handles session-locking
+			profile.OnSessionEnd:Connect(function()
+				self.PlayersProfiles[player] = nil
+				player:Kick("Data error occured. Please rejoin.")
+			end)
 
-		-- Save profile for later use
-		if player.Parent == Players then
-			self.PlayersProfiles[player] = profile
-			Initialize(player, profile)
+			-- Save profile for later use
+			if player.Parent == Players then
+				self.PlayersProfiles[player] = profile
+				--Initialize(player, profile)
+			else
+				profile:EndSession()
+			end
 		else
-			profile:EndSession()
+			-- Server shuts down while player is joining
+			player:Kick("Data error occured. Please rejoin.")
 		end
-	else
-		-- Server shuts down while player is joining
-		player:Kick("Data error occured. Please rejoin.")
-	end
 
-	local ClonedPlot = Plot:Clone()
-	ClonedPlot.Parent = workspace
-	ClonedPlot:PivotTo(CFrame.new(0, -0.1, 0))
+		-- Load plot
+		local ClonedPlot = Plot:Clone()
+		ClonedPlot.Parent = workspace
+		ClonedPlot:PivotTo(CFrame.new(0, -0.1, 0))
 
-	local MasterPlotCF = ClonedPlot.PrimaryPart.CFrame
-	local PlacedObjects = ClonedPlot.PlacedObjects
+		local MasterPlotCF = ClonedPlot.PrimaryPart.CFrame
+		local PlacedObjects = ClonedPlot.PlacedObjects
 
-	self.PlayersPlots[player] = ClonedPlot
+		self.PlayersPlots[player] = ClonedPlot
 
-	-- Load furniture from profile
-	local Profile = self.PlayersProfiles[player]
-	if Profile then
-		local Furniture = Profile.Data.Plot.Furniture or {}
-		for cf, name in pairs(Furniture) do
-			local Piece = Objects:FindFirstChild(name)
-			if Piece then
-				-- parse string into numbers
-				local components = {}
-				for num in string.gmatch(cf, "[^%s,]+") do
-					components[#components + 1] = tonumber(num)
+		-- Load furniture from profile
+		local Profile = self.PlayersProfiles[player]
+		if Profile then
+			local Furniture = Profile.Data.Plot.Furniture or {}
+			for cf, name in pairs(Furniture) do
+				local Piece = Objects:FindFirstChild(name)
+				if Piece then
+					-- parse string into numbers
+					local components = {}
+					for num in string.gmatch(cf, "[^%s,]+") do
+						components[#components + 1] = tonumber(num)
+					end
+
+					-- reconstruct CFrame
+					local newCF = MasterPlotCF * CFrame.new(unpack(components))
+
+					-- place the object (ensure parenting inside PlacementClass)
+					PlacementClass:PlaceObject(name, newCF, true)
 				end
+			end
+			print("proced to loose")
+			print(Profile.Data.Plot.LooseObjects)
+			local LooseObject = Profile.Data.Plot.LooseObjects or {}
+			for cf, name in pairs(LooseObject) do
+				local Piece = LooseObjects:FindFirstChild(name)
+				if Piece then
+					-- parse string into numbers
+					local components = {}
+					for num in string.gmatch(cf, "[^%s,]+") do
+						components[#components + 1] = tonumber(num)
+					end
 
-				-- reconstruct CFrame
-				local newCF = MasterPlotCF * CFrame.new(unpack(components))
+					-- reconstruct CFrame
+					local newCF = MasterPlotCF * CFrame.new(unpack(components))
 
-				-- place the object (ensure parenting inside PlacementClass)
-				PlacementClass:PlaceObject(name, newCF, true)
+					-- place the object (ensure parenting inside PlacementClass)
+					PlacementClass:PlaceObject(name, newCF, false)
+				end
 			end
 		end
-		print("proced to loose")
-		print(Profile.Data.Plot.LooseObjects)
-		local LooseObject = Profile.Data.Plot.LooseObjects or {}
-		for cf, name in pairs(LooseObject) do
-			local Piece = LooseObjects:FindFirstChild(name)
-			if Piece then
-				-- parse string into numbers
-				local components = {}
-				for num in string.gmatch(cf, "[^%s,]+") do
-					components[#components + 1] = tonumber(num)
-				end
 
-				-- reconstruct CFrame
-				local newCF = MasterPlotCF * CFrame.new(unpack(components))
-
-				-- place the object (ensure parenting inside PlacementClass)
-				PlacementClass:PlaceObject(name, newCF, false)
-			end
-		end
+		return ClonedPlot
 	end
-
-	return ClonedPlot
 end
 
 function PlotManager:Unload(player)
@@ -191,15 +193,15 @@ function PlotManager:Unload(player)
 		warn("Player does not have a plot loaded.")
 		return
 	end
-	
+
+	print(profile.Data.Data)
 	profile.Data.Plot.Furniture = PlotManager:SerialiseFurniture(player)
 	profile.Data.Plot.LooseObjects = PlotManager:SerialiseLoose(player)
 
 	self.PlayersPlots[player]:Destroy()
-	
+
 	profile:EndSession()
 	self.PlayersProfiles[player] = nil
 end
-
 
 return PlotManager

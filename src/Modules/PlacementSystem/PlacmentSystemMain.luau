@@ -352,7 +352,7 @@ function Placement:Init(Player, Character)
 		end
 	end)
 
-	Placement.Properties.Plot = ConstructPlot:InvokeServer()
+	Placement.Properties.Plot = ConstructPlot:InvokeServer(2)
 
 	KeybindToFunction:Init(Placement)
 	Calculations:Init(Placement)
