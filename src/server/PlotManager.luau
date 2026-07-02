@@ -14,9 +14,24 @@ local LooseObjects = ReplicatedStorage:WaitForChild("LooseObjects")
 
 local DataManager = require(script.Parent.DataManager)
 
+local Labaries = require(script.Parent:WaitForChild("ServerLibaries"))
+
+local profileStore = Labaries.ProfileStore
+local PlotTemplate = Labaries.Template
+
 local PlotManager = {}
 
 PlotManager.PlayersPlots = {}
+PlotManager.PlayersProfiles = {}
+
+local function GetStoreName(plotNumber)
+	if plotNumber == 1 or 2 or 3 then
+		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. plotNumber)
+	else
+		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. "1")
+		warn("Invalid plot number provided. Defaulting to 'Test_Plot_1'.")
+	end
+end
 
 function PlotManager:SerialiseFurniture(player)
 	local PlayersPlot = self.PlayersPlots[player]
@@ -83,7 +98,40 @@ function PlotManager:SerialiseLoose(player)
 	return serial
 end
 
-function PlotManager:Load(player)
+function PlotManager:Load(player, plotNumber)
+	if self.PlayersProfiles[player] then
+		warn("Player already has a plot loaded.")
+		--return self.PlayersProfiles[player]
+	else
+		local PlayerStore = profileStore:GetProfileStore(GetStoreName(plotNumber), PlotTemplate)
+		local profile = PlayerStore:StartSessionAsync("Player_" .. player.UserId, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
+	})
+
+	if profile ~= nil then
+		profile:AddUserId(player.UserId) -- GDPR compliance
+		profile:Reconcile() -- Fill in missing data variables from template
+
+		-- Handles session-locking
+		profile.OnSessionEnd:Connect(function()
+			self.PlayersProfiles[player] = nil
+			player:Kick("Data error occured. Please rejoin.")
+		end)
+
+		-- Save profile for later use
+		if player.Parent == Players then
+			self.PlayersProfiles[player] = profile
+			Initialize(player, profile)
+		else
+			profile:EndSession()
+		end
+	else
+		-- Server shuts down while player is joining
+		player:Kick("Data error occured. Please rejoin.")
+	end
+
 	local ClonedPlot = Plot:Clone()
 	ClonedPlot.Parent = workspace
 	ClonedPlot:PivotTo(CFrame.new(0, -0.1, 0))
@@ -94,7 +142,7 @@ function PlotManager:Load(player)
 	self.PlayersPlots[player] = ClonedPlot
 
 	-- Load furniture from profile
-	local Profile = DataManager:WaitForProfile(player)
+	local Profile = self.PlayersProfiles[player]
 	if Profile then
 		local Furniture = Profile.Data.Plot.Furniture or {}
 		for cf, name in pairs(Furniture) do
@@ -136,5 +184,22 @@ function PlotManager:Load(player)
 
 	return ClonedPlot
 end
+
+function PlotManager:Unload(player)
+	local profile = self.PlayersProfiles[player]
+	if not profile then
+		warn("Player does not have a plot loaded.")
+		return
+	end
+	
+	profile.Data.Plot.Furniture = PlotManager:SerialiseFurniture(player)
+	profile.Data.Plot.LooseObjects = PlotManager:SerialiseLoose(player)
+
+	self.PlayersPlots[player]:Destroy()
+	
+	profile:EndSession()
+	self.PlayersProfiles[player] = nil
+end
+
 
 return PlotManager

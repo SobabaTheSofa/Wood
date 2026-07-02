@@ -395,7 +395,8 @@ function TreeConc:MoveBy(offset)
 end
 
 function TreeConc:Init()
-	local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer")):Init(TreeConc)
+	local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer"))
+	TCSS:Init(TreeConc)
 
 	return self, TCSS
 end

@@ -1,6 +1,5 @@
 local Constructor, TCSS = require(script:WaitForChild("TreeConstructor")):Init()
 local ZoneConstructor = require(script:WaitForChild("ZoneConStructor")):Init(Constructor)
-Constructor = nil
 
 game:GetService("ReplicatedStorage"):WaitForChild("A1").OnServerEvent:Connect(function(player, hitData, Notch)
 	if hitData then
@@ -46,10 +45,10 @@ end
 
 local DataManager = require(script.DataManager)
 local PlotManager = require(script.PlotManager)
-local Template = require(Libaries.Template)
+local Template = require(Libaries.GeneralPlayerDataTemplate)
 
 -- Access profile store
-local PlayerStore = ProfileStore.New(GetStoreName() .. "Plot_1", Template)
+local PlayerStore = ProfileStore.New(GetStoreName(), Template)
 
 local PlacementClass = require(
 	ReplicatedStorage:WaitForChild("Modules"):WaitForChild("PlacementSystem"):WaitForChild("PlacmentSystemMain")
@@ -124,7 +123,7 @@ end)
 
 --// Plot construction
 ConstructPlot.OnServerInvoke = function(player)
-	return PlotManager:Load(player)
+	return PlotManager:Load(player, 1)
 end
 
 --// Player leaving (save)
@@ -134,11 +133,12 @@ Players.PlayerRemoving:Connect(function(player)
 		return
 	end
 
-	profile.Data.Plot.Furniture = PlotManager:SerialiseFurniture(player)
-	profile.Data.Plot.LooseObjects = PlotManager:SerialiseLoose(player)
+	--profile.Data.Plot.Furniture = PlotManager:SerialiseFurniture(player)
+	--profile.Data.Plot.LooseObjects = PlotManager:SerialiseLoose(player)
 
 	profile:EndSession()
 	DataManager.Profiles[player] = nil
+	PlotManager:Unload(player)
 end)
 
 DragReuqest.OnServerInvoke = function(player, object, requestionPickup)
