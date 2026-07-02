@@ -122,8 +122,8 @@ CBPlacement.OnServerEvent:Connect(function(player, func, ...)
 end)
 
 --// Plot construction
-ConstructPlot.OnServerInvoke = function(player)
-	return PlotManager:Load(player, 1)
+ConstructPlot.OnServerInvoke = function(player, plotNumber)
+	return PlotManager:Load(player, plotNumber)
 end
 
 --// Player leaving (save)

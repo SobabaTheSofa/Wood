@@ -24,12 +24,12 @@ local PlotManager = {}
 PlotManager.PlayersPlots = {}
 PlotManager.PlayersProfiles = {}
 
-local function GetStoreName(plotNumber)
-	if plotNumber == 1 or 2 or 3 then
-		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. plotNumber)
+local function GetStoreName(plotNumber: number)
+	if plotNumber == 1 or plotNumber == 2 or plotNumber == 3 then
+		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. tostring(plotNumber))
 	else
 		warn("Invalid plot number provided. Defaulting to 'Test_Plot_1'.")
-		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_" .. "1")
+		return ((RunService:IsStudio() and "Test" or "Live") .. "_Plot_1")
 	end
 end
 
@@ -103,7 +103,7 @@ function PlotManager:Load(player, plotNumber)
 		warn("Player already has a plot loaded.")
 		--return self.PlayersProfiles[player]
 	else
-		local PlayerStore = ProfileStore.New(GetStoreName(1), PlotTemplate)
+		local PlayerStore = ProfileStore.New(GetStoreName(plotNumber), PlotTemplate)
 		local profile = PlayerStore:StartSessionAsync("Player_" .. player.UserId, {
 			Cancel = function()
 				return player.Parent ~= Players
