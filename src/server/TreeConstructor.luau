@@ -1,3 +1,7 @@
+--NOTE TO SELF stuf to be implemented:
+--bending i like it bendy
+--check for collision when growing branches
+
 local ServerScriptSerivce = game:GetService("ServerScriptService")
 local CollectionService = game:GetService("CollectionService")
 
@@ -6,7 +10,7 @@ local TreeDictionary = require(script.Parent:WaitForChild("TreeDictionary"))
 local TreeConc = {}
 TreeConc.__index = TreeConc
 
-TreeConc.TreeRegistry = {}
+TreeConc.TreeRegistry = nil
 
 local function GetBranchFromPart(part)
 	if not part then
@@ -17,13 +21,14 @@ local function GetBranchFromPart(part)
 end
 
 local function CreateMark(part, topOrBottom)
-	if not GetBranchFromPart(part) then
+	local Log = GetBranchFromPart(part)
+	if not Log then
 		return
 	end
 
 	local newMark = Instance.new("Part")
-	newMark.Color = Color3.fromRGB(166, 125, 96)
-	newMark.Material = Enum.Material.Wood
+	newMark.Color = Log.BarkColour
+	newMark.Material = Log.BarkMaterial
 	newMark.Transparency = 0
 	newMark.Size = Vector3.new(part.Size.X * 0.95, 0.02, part.Size.Z * 0.95)
 	newMark.CFrame = part.CFrame * CFrame.new(0, (part.Size.Y / 2) * topOrBottom, 0)
@@ -136,6 +141,16 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 	self.LengthMultiplier = class.LengthMultiplier
 	self.TrunkRadiusMultiplier = class.TrunkRadiusMultiplier
 
+	self.LeafMaterial = class.LeafMaterial
+	self.LeafColor = class.LeafColor
+	self.LeafTransparency = class.LeafTransparency
+
+	self.BarkMaterial = class.BarkMaterial
+	self.BarkColor = class.BarkColor
+
+	self.PlankMaterial = class.PlankMaterial
+	self.PlankColour = class.PlankColour
+
 	self.MaxSubBranches = class.MaxSubBranches
 	self.ChildrenLimit = class.ChildrenLimit
 
@@ -157,8 +172,8 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 	local p = Instance.new("Part")
 	p.Size = setSize or Vector3.new(0.2, 0.2, 0.2)
 	p.Anchored = true
-	p.Color = Color3.fromRGB(66, 30, 18)
-	p.Material = Enum.Material.Concrete
+	p.Color = self.BarkColor
+	p.Material = self.BarkMaterial
 	p.CFrame = cframe
 	p.Name = self.TreeClass
 	p.Parent = workspace
@@ -244,8 +259,8 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 
 		local l = Instance.new("Part")
 		l.Anchored = true
-		l.Color = Color3.fromRGB(0, 85, 0)
-		l.Material = Enum.Material.Grass
+		l.Color = self.LeafColour
+		l.Material = self.LeafMaterial
 		l.Name = "Leaf"
 		l.Size = leafSize
 		l.CFrame = p.CFrame * CFrame.new(0, p.Size.Y / 2 + l.Size.Y / 2, 0)
@@ -394,7 +409,8 @@ function TreeConc:MoveBy(offset)
 	end
 end
 
-function TreeConc:Init()
+function TreeConc:Init(BaseEnv)
+	self.TreeRegistry = BaseEnv
 	local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer"))
 	TCSS:Init(TreeConc)
 

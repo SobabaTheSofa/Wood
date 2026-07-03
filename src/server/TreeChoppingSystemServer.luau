@@ -262,13 +262,14 @@ local function AnchorAllChildren(part)
 end
 
 local function CreateMark(part, topOrBottom)
-	if not GetBranchFromPart(part) then
+	local Log = GetBranchFromPart(part)
+	if not Log then
 		return
 	end
 
 	local newMark = Instance.new("Part")
-	newMark.Color = Color3.fromRGB(166, 125, 96)
-	newMark.Material = Enum.Material.Wood
+	newMark.Color = Log.BarkColour
+	newMark.Material = Log.BarkMaterial
 	newMark.Transparency = 0
 	newMark.Size = Vector3.new(part.Size.X * 0.95, 0.02, part.Size.Z * 0.95)
 	newMark.CFrame = part.CFrame * CFrame.new(0, (part.Size.Y / 2) * topOrBottom, 0)

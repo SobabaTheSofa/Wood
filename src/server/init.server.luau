@@ -1,3 +1,4 @@
+local TreeRegistry = require(script:WaitForChild("TreeRegistry"))
 local Constructor, TCSS = require(script:WaitForChild("TreeConstructor")):Init()
 local ZoneConstructor = require(script:WaitForChild("ZoneConStructor")):Init(Constructor)
 

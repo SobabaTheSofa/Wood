@@ -244,7 +244,7 @@ function Placement:DeleteMode(MouseTarget)
 	end
 end
 
-function Placement:PlaceObject(OBJN, CFRAME, Anchored)
+function Placement:PlaceObject(OBJN, CFRAME, Anchored) -- note to self why are you using hte same function or lose and anchored idk dont know
 	if isServer then
 		local TargetClone
 
