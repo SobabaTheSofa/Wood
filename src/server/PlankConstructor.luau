@@ -10,7 +10,7 @@ local function GetBranchFromPart(part)
 		return nil
 	end
 
-	return plankConstructor.PlankRegistry[part]
+	return PlankConstructor.PlankRegistry[part]
 end
 
 function PlankConstructor.New(volume, cframe, witdh, hieght, length) --length is to be implemented
