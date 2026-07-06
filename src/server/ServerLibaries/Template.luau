@@ -2,6 +2,7 @@ return {
 	Plot = {
 		Furniture = {},
 		LooseObjects = {},
+		SawMills = {},
 		SubPlots = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	},
 
