@@ -18,6 +18,6 @@ return {
 	},
 
 	Mouse = {
-		--MouseButton1 = "PlaceObject",
+		MouseButton1 = "PlaceObject",
 	},
 }

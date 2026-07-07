@@ -13,11 +13,14 @@ local Placement = {}
 
 local Calculations = require(script.Parent.SharedCalculations)
 local KeybindToFunction = require(script.Parent:WaitForChild("KeybindToFunctions"))
+local FurnitureDictionary = require(script.Parent:WaitForChild("FurnitureDictionary"))
 --local UI = require(script.UI)
 
 local RS = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
+local ObjectSawmillConstructor = require(ServerScriptService.Server.ObjectSawmillConstructor)
 
 local isServer = RS:IsServer()
 
@@ -77,8 +80,10 @@ Placement.Constants = {
 
 Placement.IgnoreList = {}
 
-local function GetObject(ObjectName)
-	local Object = ObjectsFolder:FindFirstChild(ObjectName)
+Placement.PlotRegistry = {}
+
+local function GetObject(ID)
+	local Object = ObjectsFolder:FindFirstChild(FurnitureDictionary[ID][3])
 	if not Object then
 		return
 	end
@@ -147,11 +152,11 @@ local function GetObject(ObjectName)
 	return ObjectClone
 end
 
-function Placement:ActivateBuildMode(ObjectName)
+function Placement:ActivateBuildMode(ID)
 	Placement.Properties.BuildModeActive = true
 	--UI:ObjectListState("Close")
 	print("active")
-	local Object = GetObject(ObjectName)
+	local Object = GetObject(ID)
 	if not Object then
 		warn("Unable to start placement!")
 		Placement:CancelPlacing()
@@ -159,6 +164,7 @@ function Placement:ActivateBuildMode(ObjectName)
 	end
 
 	Placement.Properties.Object = Object
+	Placement.Properties.ObjectID = ID
 	Placement.Mouse.TargetFilter = Object
 	Placement.IgnoreList =
 		{ Object, Placement.Character, workspace.Terrain, Placement.Properties.Plot:FindFirstChild("PlotBoundries") }
@@ -237,35 +243,41 @@ function Placement:DeleteMode(MouseTarget)
 			MouseTarget:Destroy()
 		end
 	else
-		if MouseTarget and MouseTarget:IsDescendantOf(workspace.Plot.PlacedObjects) then
+		if MouseTarget and MouseTarget:IsDescendantOf(Placement.Properties.Plot) then
 			print(MouseTarget)
 			DSPlacement:FireServer("DeleteMode", MouseTarget)
 		end
 	end
 end
 
-function Placement:PlaceObject(OBJN, CFRAME, Anchored) -- note to self why are you using hte same function or lose and anchored idk dont know
+function Placement:PlaceObject(OBJN, CFRAME, player, Plot)
 	if isServer then
-		local TargetClone
+		--local TargetClone
 
-		if Anchored then
-			TargetClone = Objects:FindFirstChild(OBJN):Clone()
-			TargetClone.Parent = workspace.Plot.PlacedObjects
-		else
-			TargetClone = LooseObjects:FindFirstChild(OBJN):Clone()
-			TargetClone.Parent = workspace
-		end
+		--if Anchored then
+		--	TargetClone = Objects:FindFirstChild(OBJN):Clone()
+		--	TargetClone.Parent = Plot
+		--else
+		--	TargetClone = LooseObjects:FindFirstChild(OBJN):Clone()
+		--	TargetClone.Parent = workspace
+		--end
+		--
+		--if TargetClone:IsA("Model") then
+		--	TargetClone:PivotTo(CFRAME)
+		--else
+		--	TargetClone.CFrame = CFRAME
+		--end
+		--
+		--if TargetClone:IsA("Model") then
+		--	TargetClone.PrimaryPart.Anchored = Anchored
+		--else
+		--	TargetClone.Anchored = Anchored
+		--end
+		local PlayerPlot = Placement.PlotRegistry[player]
 
-		if TargetClone:IsA("Model") then
-			TargetClone:PivotTo(CFRAME)
-		else
-			TargetClone.CFrame = CFRAME
-		end
-
-		if TargetClone:IsA("Model") then
-			TargetClone.PrimaryPart.Anchored = Anchored
-		else
-			TargetClone.Anchored = Anchored
+		if FurnitureDictionary[OBJN][2] == "Sawmill" then
+			local OBJ = ObjectSawmillConstructor.new(OBJN, CFRAME, player, Plot)
+			table.insert(PlayerPlot[FurnitureDictionary[OBJN][2]], OBJ)
 		end
 	else
 		if Placement.Properties.ManualAxis or Placement.Properties.ManualRotation then
@@ -279,7 +291,7 @@ function Placement:PlaceObject(OBJN, CFRAME, Anchored) -- note to self why are y
 			return
 		end
 		local Object = Placement.Properties.Object
-		local ObjectName = Object.Name
+		local ObjectID = Placement.Properties.ObjectID
 		local CF
 
 		if Object:IsA("Model") then
@@ -288,10 +300,10 @@ function Placement:PlaceObject(OBJN, CFRAME, Anchored) -- note to self why are y
 			CF = Object.CFrame
 		end
 
-		CBPlacement:FireServer("PlaceObject", ObjectName, CF, true)
+		CBPlacement:FireServer("PlaceObject", ObjectID, CF, Players.LocalPlayer, Placement.Properties.Plot)
 
 		if Placement.Properties.AutomaticallyPlacing then
-			Placement:ActivateBuildMode(ObjectName)
+			Placement:ActivateBuildMode(ObjectID)
 		else
 			Placement:CancelPlacing()
 		end

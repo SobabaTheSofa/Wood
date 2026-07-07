@@ -13,11 +13,14 @@ local Objects = ReplicatedStorage:WaitForChild("Objects")
 local LooseObjects = ReplicatedStorage:WaitForChild("LooseObjects")
 
 local DataManager = require(script.Parent.DataManager)
+local ObjectSawmillConstructor = require(script.Parent.ObjectSawmillConstructor)
 
 local Labaries = script.Parent:WaitForChild("ServerLibaries")
 
 local ProfileStore = require(Labaries.ProfileStore)
 local PlotTemplate = require(Labaries.Template)
+
+local FurnitureDictionary = require(script.Parent:WaitForChild("FurnitureDictionary"))
 
 local PlotManager = {}
 
@@ -98,10 +101,18 @@ function PlotManager:SerialiseLoose(player)
 	return serial
 end
 
+function PlotManager:Serialise(player)
+
+end
+
 function PlotManager:Load(player, plotNumber)
 	if self.PlayersProfiles[player] then
 		warn("Player already has a plot loaded.")
+		return
 		--return self.PlayersProfiles[player]
+	--elseif self.PlayersPlots[plotNumber] then -- add check function later
+	--	warn("Plot already taken.")
+	--	return 
 	else
 		local PlayerStore = ProfileStore.New(GetStoreName(plotNumber), PlotTemplate)
 		local profile = PlayerStore:StartSessionAsync("Player_" .. player.UserId, {
@@ -140,48 +151,67 @@ function PlotManager:Load(player, plotNumber)
 		local MasterPlotCF = ClonedPlot.PrimaryPart.CFrame
 		local PlacedObjects = ClonedPlot.PlacedObjects
 
-		self.PlayersPlots[player] = ClonedPlot
-
-		-- Load furniture from profile
+		self.PlayersPlots[player] = {
+			Plot = ClonedPlot,
+			PlotNumber = plotNumber,
+		}
+		PlacementClass.PlotRegistry[player] = {
+			Plot = ClonedPlot,
+			Furniture = {},
+			LooseObjects = {},
+			SawMill = {},
+		}
+		-- Load sawmill
 		local Profile = self.PlayersProfiles[player]
 		if Profile then
-			local Furniture = Profile.Data.Plot.Furniture or {}
-			for cf, name in pairs(Furniture) do
-				local Piece = Objects:FindFirstChild(name)
-				if Piece then
-					-- parse string into numbers
-					local components = {}
-					for num in string.gmatch(cf, "[^%s,]+") do
-						components[#components + 1] = tonumber(num)
-					end
+			local Sawmill = Profile.Data.Plot.SawMill or {}
 
-					-- reconstruct CFrame
-					local newCF = MasterPlotCF * CFrame.new(unpack(components))
-
-					-- place the object (ensure parenting inside PlacementClass)
-					PlacementClass:PlaceObject(name, newCF, true)
-				end
-			end
-			print("proced to loose")
-			print(Profile.Data.Plot.LooseObjects)
-			local LooseObject = Profile.Data.Plot.LooseObjects or {}
-			for cf, name in pairs(LooseObject) do
-				local Piece = LooseObjects:FindFirstChild(name)
-				if Piece then
-					-- parse string into numbers
-					local components = {}
-					for num in string.gmatch(cf, "[^%s,]+") do
-						components[#components + 1] = tonumber(num)
-					end
-
-					-- reconstruct CFrame
-					local newCF = MasterPlotCF * CFrame.new(unpack(components))
-
-					-- place the object (ensure parenting inside PlacementClass)
-					PlacementClass:PlaceObject(name, newCF, false)
-				end
+			for STable, ID in pairs(Sawmill) do
+				local OBJ = ObjectSawmillConstructor:FromSerialise(ID, STable, player, PlacementClass.PlotRegistry[player][Plot])
+				table.insert(PlacementClass.PlotRegistry[player][Sawmill], OBJ)
 			end
 		end
+
+		-- Load furniture from profile
+		--local Profile = self.PlayersProfiles[player]
+		--if Profile then
+		--	local Furniture = Profile.Data.Plot.Furniture or {}
+		--	for cf, name in pairs(Furniture) do
+		--		local Piece = Objects:FindFirstChild(name)
+		--		if Piece then
+		--			-- parse string into numbers
+		--			local components = {}
+		--			for num in string.gmatch(cf, "[^%s,]+") do
+		--				components[#components + 1] = tonumber(num)
+		--			end
+--
+		--			-- reconstruct CFrame
+		--			local newCF = MasterPlotCF * CFrame.new(unpack(components))
+--
+		--			-- place the object (ensure parenting inside PlacementClass)
+		--			PlacementClass:PlaceObject(name, newCF, true)
+		--		end
+		--	end
+		--	print("proced to loose")
+		--	print(Profile.Data.Plot.LooseObjects)
+		--	local LooseObject = Profile.Data.Plot.LooseObjects or {}
+		--	for cf, name in pairs(LooseObject) do
+		--		local Piece = LooseObjects:FindFirstChild(name)
+		--		if Piece then
+		--			-- parse string into numbers
+		--			local components = {}
+		--			for num in string.gmatch(cf, "[^%s,]+") do
+		--				components[#components + 1] = tonumber(num)
+		--			end
+--
+		--			-- reconstruct CFrame
+		--			local newCF = MasterPlotCF * CFrame.new(unpack(components))
+--
+		--			-- place the object (ensure parenting inside PlacementClass)
+		--			PlacementClass:PlaceObject(name, newCF, false)
+		--		end
+		--	end
+		--end
 
 		return ClonedPlot
 	end
@@ -194,11 +224,16 @@ function PlotManager:Unload(player)
 		return
 	end
 
-	print(profile.Data.Data)
-	profile.Data.Plot.Furniture = PlotManager:SerialiseFurniture(player)
-	profile.Data.Plot.LooseObjects = PlotManager:SerialiseLoose(player)
+	--print(profile.Data.Data)
+	--profile.Data.Plot.Furniture = PlotManager:SerialiseFurniture(player)
+	--profile.Data.Plot.LooseObjects = PlotManager:SerialiseLoose(player)
 
-	self.PlayersPlots[player]:Destroy()
+	for i in #PlacementClass.PlotRegistry[player][Sawmill] do
+		profile.Data.Plot.Sawmill[i:Serialise] = i.ID
+	end 
+
+	self.PlayersPlots[player].Plot:Destroy() -- free up plot for other players via .PlotNumber
+	self.PlayersPlots[player] = nil
 
 	profile:EndSession()
 	self.PlayersProfiles[player] = nil
