@@ -13,14 +13,17 @@ local Placement = {}
 
 local Calculations = require(script.Parent.SharedCalculations)
 local KeybindToFunction = require(script.Parent:WaitForChild("KeybindToFunctions"))
-local FurnitureDictionary = require(script.Parent:WaitForChild("FurnitureDictionary"))
+
 --local UI = require(script.UI)
 
 local RS = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
-local ObjectSawmillConstructor = require(ServerScriptService.Server.ObjectSawmillConstructor)
+local FurnitureDictionary = require(
+	ReplicatedStorage:WaitForChild("Modules"):WaitForChild("ModuleDictionaries"):WaitForChild("FurnitureDictionary")
+)
+local ObjectSawmillConstructor
 
 local isServer = RS:IsServer()
 
@@ -274,6 +277,10 @@ function Placement:PlaceObject(OBJN, CFRAME, player, Plot)
 		--	TargetClone.Anchored = Anchored
 		--end
 		local PlayerPlot = Placement.PlotRegistry[player]
+
+		if ObjectSawmillConstructor == nil then
+			ObjectSawmillConstructor = require(ServerScriptService.Server.ObjectSawmillConstructor)
+		end
 
 		if FurnitureDictionary[OBJN][2] == "Sawmill" then
 			local OBJ = ObjectSawmillConstructor.new(OBJN, CFRAME, player, Plot)

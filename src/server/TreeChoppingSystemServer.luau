@@ -268,8 +268,8 @@ local function CreateMark(part, topOrBottom)
 	end
 
 	local newMark = Instance.new("Part")
-	newMark.Color = Log.BarkColour
-	newMark.Material = Log.BarkMaterial
+	newMark.Color = Log.PlankColour
+	newMark.Material = Log.PlankMaterial
 	newMark.Transparency = 0
 	newMark.Size = Vector3.new(part.Size.X * 0.95, 0.02, part.Size.Z * 0.95)
 	newMark.CFrame = part.CFrame * CFrame.new(0, (part.Size.Y / 2) * topOrBottom, 0)

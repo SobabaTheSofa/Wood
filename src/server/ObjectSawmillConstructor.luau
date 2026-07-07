@@ -1,4 +1,5 @@
-local Object = require(script.Parent:WaitForChild("ObjectConstructor"))
+local HttpService = game:GetService("HttpService")
+local Object = require(script.Parent.ObjectConsturctor)
 
 local Sawmill = {}
 Sawmill.__index = Sawmill
@@ -28,22 +29,22 @@ function Sawmill:Serialise()
 		return
 	end
 
-	local serial = {
-		tostring(cfi * TFC),
+	return HttpService:JSONEncode({
+		{ (cfi * TFC):GetComponents() },
 		self.X,
 		self.Y,
-	}
-
-	return serial
+	})
 end
 
-function Sawmill:FromSerialise(ID, SerialTable, Player, Plot)
-	local components = {}
-	for num in string.gmatch(SerialTable[1], "[^%s,]+") do
-		components[#components + 1] = tonumber(num)
-	end
+function Sawmill:FromSerialise(ID, data, Player, Plot)
+	local SerialTable = HttpService:JSONDecode(data)
 
-	local newCF = Plot.CFrame * CFrame.new(unpack(components))
+	local relativeCF = CFrame.new(unpack(SerialTable[1]))
+	local worldCF = Plot.PrimaryPart.CFrame * relativeCF
 
-	self.new(ID, newCF, Player, Plot, SerialTable[2], SerialTable[3])
+	return self.new(ID, worldCF, Player, Plot, SerialTable[2], SerialTable[3])
 end
+
+return Sawmill
+
+--note to self add clean up functionlater i can not be botherrre

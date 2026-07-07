@@ -101,18 +101,16 @@ function PlotManager:SerialiseLoose(player)
 	return serial
 end
 
-function PlotManager:Serialise(player)
-
-end
+function PlotManager:Serialise(player) end
 
 function PlotManager:Load(player, plotNumber)
 	if self.PlayersProfiles[player] then
 		warn("Player already has a plot loaded.")
 		return
 		--return self.PlayersProfiles[player]
-	--elseif self.PlayersPlots[plotNumber] then -- add check function later
-	--	warn("Plot already taken.")
-	--	return 
+		--elseif self.PlayersPlots[plotNumber] then -- add check function later
+		--	warn("Plot already taken.")
+		--	return
 	else
 		local PlayerStore = ProfileStore.New(GetStoreName(plotNumber), PlotTemplate)
 		local profile = PlayerStore:StartSessionAsync("Player_" .. player.UserId, {
@@ -146,7 +144,7 @@ function PlotManager:Load(player, plotNumber)
 		-- Load plot
 		local ClonedPlot = Plot:Clone()
 		ClonedPlot.Parent = workspace
-		ClonedPlot:PivotTo(CFrame.new(0, -0.1, 0))
+		ClonedPlot:PivotTo(CFrame.new(3.555, -1.777, 10.67))
 
 		local MasterPlotCF = ClonedPlot.PrimaryPart.CFrame
 		local PlacedObjects = ClonedPlot.PlacedObjects
@@ -159,16 +157,19 @@ function PlotManager:Load(player, plotNumber)
 			Plot = ClonedPlot,
 			Furniture = {},
 			LooseObjects = {},
-			SawMill = {},
+			Sawmill = {},
 		}
 		-- Load sawmill
 		local Profile = self.PlayersProfiles[player]
 		if Profile then
-			local Sawmill = Profile.Data.Plot.SawMill or {}
+			local Sawmill = Profile.Data.Plot.Sawmill or {}
+			print(Sawmill)
 
 			for STable, ID in pairs(Sawmill) do
-				local OBJ = ObjectSawmillConstructor:FromSerialise(ID, STable, player, PlacementClass.PlotRegistry[player][Plot])
-				table.insert(PlacementClass.PlotRegistry[player][Sawmill], OBJ)
+				print(STable)
+				local OBJ =
+					ObjectSawmillConstructor:FromSerialise(ID, STable, player, PlacementClass.PlotRegistry[player].Plot)
+				table.insert(PlacementClass.PlotRegistry[player].Sawmill, OBJ)
 			end
 		end
 
@@ -184,10 +185,10 @@ function PlotManager:Load(player, plotNumber)
 		--			for num in string.gmatch(cf, "[^%s,]+") do
 		--				components[#components + 1] = tonumber(num)
 		--			end
---
+		--
 		--			-- reconstruct CFrame
 		--			local newCF = MasterPlotCF * CFrame.new(unpack(components))
---
+		--
 		--			-- place the object (ensure parenting inside PlacementClass)
 		--			PlacementClass:PlaceObject(name, newCF, true)
 		--		end
@@ -203,10 +204,10 @@ function PlotManager:Load(player, plotNumber)
 		--			for num in string.gmatch(cf, "[^%s,]+") do
 		--				components[#components + 1] = tonumber(num)
 		--			end
---
+		--
 		--			-- reconstruct CFrame
 		--			local newCF = MasterPlotCF * CFrame.new(unpack(components))
---
+		--
 		--			-- place the object (ensure parenting inside PlacementClass)
 		--			PlacementClass:PlaceObject(name, newCF, false)
 		--		end
@@ -228,9 +229,10 @@ function PlotManager:Unload(player)
 	--profile.Data.Plot.Furniture = PlotManager:SerialiseFurniture(player)
 	--profile.Data.Plot.LooseObjects = PlotManager:SerialiseLoose(player)
 
-	for i in #PlacementClass.PlotRegistry[player][Sawmill] do
-		profile.Data.Plot.Sawmill[i:Serialise] = i.ID
-	end 
+	for i, value in pairs(PlacementClass.PlotRegistry[player].Sawmill) do
+		print(value)
+		profile.Data.Plot.Sawmill[value:Serialise()] = value.ID
+	end
 
 	self.PlayersPlots[player].Plot:Destroy() -- free up plot for other players via .PlotNumber
 	self.PlayersPlots[player] = nil
@@ -238,5 +240,4 @@ function PlotManager:Unload(player)
 	profile:EndSession()
 	self.PlayersProfiles[player] = nil
 end
-
 return PlotManager

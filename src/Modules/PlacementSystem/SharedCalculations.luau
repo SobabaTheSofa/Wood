@@ -48,11 +48,18 @@ local function GetRotatedSize(Rotation, Size) -- Gets rotated size of model
 end
 
 local function SnapToGrid(Position, GridSize) -- Snaps object to worldspace grid
+	local Size = Properties.Plot.PrimaryPart.Size
+	local Offset = Properties.Plot.PrimaryPart.CFrame.Position
+
+	local OX = Offset.x - math.floor(Offset.x)
+	local OY = Offset.y - math.floor(Offset.y) + Size.y / 2
+	local OZ = Offset.z - math.floor(Offset.z)
+
 	return CFrame.new(
-		math.floor(Position.X / GridSize + 0.5) * GridSize,
-		math.floor(Position.Y / GridSize + 0.5) * GridSize,
-		math.floor(Position.Z / GridSize + 0.5) * GridSize
-	)
+		math.floor(Position.X / GridSize + 0.5) * GridSize + OX,
+		math.floor(Position.Y / GridSize + 0.5) * GridSize + OY,
+		math.floor(Position.Z / GridSize + 0.5) * GridSize + OZ
+	) -- ntoe to self fix this, i need to go take a dump
 end
 
 local function RoundPosition(Position) -- Rounding position of object in plot object space
