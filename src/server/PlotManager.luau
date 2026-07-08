@@ -144,7 +144,7 @@ function PlotManager:Load(player, plotNumber)
 		-- Load plot
 		local ClonedPlot = Plot:Clone()
 		ClonedPlot.Parent = workspace
-		ClonedPlot:PivotTo(CFrame.new(3.555, -1.777, 10.67))
+		ClonedPlot:PivotTo(CFrame.new(0, 0, 0))
 
 		local MasterPlotCF = ClonedPlot.PrimaryPart.CFrame
 		local PlacedObjects = ClonedPlot.PlacedObjects
