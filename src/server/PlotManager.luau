@@ -20,12 +20,23 @@ local Labaries = script.Parent:WaitForChild("ServerLibaries")
 local ProfileStore = require(Labaries.ProfileStore)
 local PlotTemplate = require(Labaries.Template)
 
-local FurnitureDictionary = require(script.Parent:WaitForChild("FurnitureDictionary"))
+local FurnitureDictionary = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("PlacementSystem"):WaitForChild("FurnitureDictionary"))
 
 local PlotManager = {}
 
 PlotManager.PlayersPlots = {}
 PlotManager.PlayersProfiles = {}
+
+local function LoadObjects(ID, ...)
+	local ConstructorID = FurnitureDictionary[ID][2]
+	local Constructor = require(script.Parent:WaitForChild("Object" .. ConstructorID .. "Constructor"))
+
+	local Object = Constructor:FromSerialise(ID, ...)
+
+
+	return Object
+end
+
 
 local function GetStoreName(plotNumber: number)
 	if plotNumber == 1 or plotNumber == 2 or plotNumber == 3 then
@@ -156,20 +167,19 @@ function PlotManager:Load(player, plotNumber)
 		PlacementClass.PlotRegistry[player] = {
 			Plot = ClonedPlot,
 			Furniture = {},
-			LooseObjects = {},
+			LooseObject = {},
 			Sawmill = {},
+
+			-- should be handle why loop through furniture dictionaery
 		}
 		-- Load sawmill
 		local Profile = self.PlayersProfiles[player]
 		if Profile then
-			local Sawmill = Profile.Data.Plot.Sawmill or {}
-			print(Sawmill)
-
-			for STable, ID in pairs(Sawmill) do
-				print(STable)
+			for i in ipairs (Profile.DataPlot)
+				for STable, ID in pairs(Profile.DataPlot[i] or {}) do
 				local OBJ =
-					ObjectSawmillConstructor:FromSerialise(ID, STable, player, PlacementClass.PlotRegistry[player].Plot)
-				table.insert(PlacementClass.PlotRegistry[player].Sawmill, OBJ)
+					LoadObjects(ID, STable, player, PlacementClass.PlotRegistry[player].Plot)
+				table.insert(PlacementClass.PlotRegistry[player].tostring(FurnitureDictionary[ID][2]), OBJ)
 			end
 		end
 

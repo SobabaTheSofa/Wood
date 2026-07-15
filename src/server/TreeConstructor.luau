@@ -5,12 +5,15 @@
 local ServerScriptSerivce = game:GetService("ServerScriptService")
 local CollectionService = game:GetService("CollectionService")
 
+local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer"))
 local TreeDictionary = require(script.Parent:WaitForChild("TreeDictionary"))
 
 local TreeConc = {}
 TreeConc.__index = TreeConc
 
-TreeConc.TreeRegistry = nil
+TreeConc.TreeRegistry = require(script.Parent:WaitForChild("TreeRegistry"))
+
+setmetatable(self, TCSS)
 
 local function GetBranchFromPart(part)
 	if not part then
@@ -110,6 +113,10 @@ local function RemoveBranchWeldBetween(partA, partB)
 	end
 end
 
+local function RotateAssembly(Part, Aseembly)
+
+end
+
 function TreeConc:CalculateTargetLength(mode)
 	if mode == "Exponential" then
 		return math.floor(self.MaxLength * (self.LengthMultiplier ^ self.N) * 5 + 0.5) / 5
@@ -122,6 +129,7 @@ function TreeConc:CalculateMaxChildren(mode)
 	end
 end
 
+
 function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValue, lVolume, setSize)
 	local self = setmetatable({}, TreeConc)
 
@@ -132,6 +140,10 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 	end
 
 	self.TreeClass = class.Name
+	-- experimental to be removed if not optimised
+	self.isGrowing = true
+	self.hasBended = false
+	self.BranchBendingLimit = class.BranchBendingLimit
 
 	self.MaxLength = class.MaxLength
 	self.MaxTrunkRadius = class.MaxTrunkRadius
@@ -273,7 +285,7 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 	return self
 end
 
-function TreeConc:SpawnBranchAtTip()
+function TreeConc:SpawnBranchAtTip() -- collision detection is to be implemented
 	local LV = 3
 
 	if self.Leaf then
@@ -373,6 +385,8 @@ function TreeConc:GrowWidth()
 end
 
 function TreeConc:Grow()
+	if not self.isGrowing then return end 
+
 	self:GrowLength()
 	self:GrowWidth()
 	self:GrowLeaf()
@@ -396,6 +410,27 @@ function TreeConc:Grow()
 			childBranch:Grow()
 		end
 	end
+
+	if #self.children > 0 and self.hasBended and self.N >= self.BranchBendingLimit the
+		if math.random(1,100) > 67 then -- to be determined
+
+		end
+	end	
+end
+
+function TreeConc:BendBranch()
+	local Ylength = self.Tree.Size.y
+	local branchCFrame = self.Tree.CFrame
+
+
+	self.Tree.Size.y/2 --as of current is now 50/50 split to be randomised
+	local CloneP = self.Tree:Clone()
+
+	branchCFrame = self.Tree:ToWorldSpace(CFrame.new(0,-self.Tree.Size.y/2, 0)) -- to be resaerched: use the direction of upvector to simplify and minimalise
+	-- apply position changes to clone brnach 
+
+
+	-- apply rotation to chilldren assembly
 end
 
 function TreeConc:MoveBy(offset)
@@ -410,12 +445,10 @@ function TreeConc:MoveBy(offset)
 	end
 end
 
-function TreeConc:Init(BaseEnv)
-	self.TreeRegistry = BaseEnv
-	local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer"))
-	TCSS:Init(TreeConc)
+function TreeConc:Init(BaseEnv) -- unsed requirering is enough, to be remoed if not other init function is neded
+	---self.TreeRegistry = BaseEnv
 
-	return self, TCSS
+	return self 
 end
 
 return TreeConc

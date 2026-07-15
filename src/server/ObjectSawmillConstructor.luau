@@ -48,3 +48,4 @@ end
 return Sawmill
 
 --note to self add clean up functionlater i can not be botherrre
+-- actualy put it in superclass object constructor
