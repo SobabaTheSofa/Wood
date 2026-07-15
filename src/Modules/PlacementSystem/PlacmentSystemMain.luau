@@ -83,7 +83,11 @@ Placement.Constants = {
 
 Placement.IgnoreList = {}
 
-Placement.PlotRegistry = {}
+if isServer then
+	Placement.PlotRegistry = ServerScriptSerivce.Server.ObjectPlayerPlotRegistry
+else
+	Placement.PlotRegistry = {}
+end
 
 local function GetObject(ID)
 	local Object = ObjectsFolder:FindFirstChild(FurnitureDictionary[ID][3])
