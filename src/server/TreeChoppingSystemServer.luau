@@ -750,11 +750,11 @@ function TCSS:IntersectFromNotch(part)
 	Interesct(part.Parent, CutY)
 end
 
-function TCSS:Init(BaseEnv)
-	Base = BaseEnv
-	TreeRegistry = BaseEnv.TreeRegistry
-
-	return self
-end
+--function TCSS:Init(BaseEnv) to be removed init
+--	Base = BaseEnv
+--	TreeRegistry = BaseEnv.TreeRegistry
+--
+--	return self
+--end
 
 return TCSS

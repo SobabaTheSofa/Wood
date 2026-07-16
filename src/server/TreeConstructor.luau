@@ -4,6 +4,7 @@
 
 local ServerScriptSerivce = game:GetService("ServerScriptService")
 local CollectionService = game:GetService("CollectionService")
+local MetaBreakpointManager = game:GetService("MetaBreakpointManager")
 
 local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer"))
 local TreeDictionary = require(script.Parent:WaitForChild("TreeDictionary"))
@@ -113,9 +114,6 @@ local function RemoveBranchWeldBetween(partA, partB)
 	end
 end
 
-local function RotateAssembly(Part, Aseembly)
-
-end
 
 function TreeConc:CalculateTargetLength(mode)
 	if mode == "Exponential" then
@@ -431,6 +429,29 @@ function TreeConc:BendBranch()
 
 
 	-- apply rotation to chilldren assembly
+end
+
+function TreeConc:RotateAssembly(branch)
+	local Branch = GetBranchFromPart(branch)
+	local originalCFrame = Branch.Tree.CFrame
+
+	for i, y in pairs(Branch) do 
+		if i == "Tree" then 
+			self:ApplyRotation(Branch, i.Tree)
+		end
+
+		if i == "Children" then
+			for i, y in pairs(i) do
+				--recursive
+				self:RotateAssembly(i)
+			end
+		end
+	end
+	
+end
+
+function TreeConc:ApplyRotation(originalpart, part)
+	--- to be implement please done it by 20/5
 end
 
 function TreeConc:MoveBy(offset)
