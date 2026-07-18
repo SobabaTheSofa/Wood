@@ -73,7 +73,7 @@ function ZoneConstructor.new(Part, Zone: string)
 					task.spawn(function()
 						for i = 1, 1000 do
 							Tree:Grow()
-							task.wait(0.1)
+							task.wait(1)
 						end
 					end)
 				end

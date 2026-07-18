@@ -1,24 +1,28 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptSerivce = game:GetService("ServerScriptSerivce")
+local ServerScriptSerivce = game:GetService("ServerScriptService")
 
 local FurnitureDictionary = require(script.Parent:WaitForChild("FurnitureDictionary"))
 local Objects = ReplicatedStorage:WaitForChild("Objects")
 local Objectsloose = ReplicatedStorage:WaitForChild("LooseObjects")
-local ObjectRegistry = ServerScriptSerivce.Server.ObjectRegistry
+local ObjectRegistry = ServerScriptSerivce.Server.ObjectPlayerPlotRegistry
 
 local Object = {}
 Object.__index = Object
 
 local function SerachObject(looseornot, instancepart, Owner)
 	if looseornot then
-		warn("a")
-		return 
+		-- search work space
+		return
 	else
-	
-	end
-	for i in ipairs(ObjectRegistry[Owner])
-		if i == instancepart then
-			return i 
+		local objects = ObjectRegistry[Owner]
+		if not objects then
+			return nil
+		end
+
+		for index, object in ipairs(objects) do
+			if object == instancepart then
+				return index
+			end
 		end
 	end
 end
@@ -42,7 +46,7 @@ function Object.new(ID, cframe, Player, Plot)
 			self.Object.PrimaryPart.Anchored = true
 		end
 
-		self.Object.Parent = Plot
+		self.Object.Parent = Plot.PlacedObjects
 	else
 		self.Object = Objectsloose:WaitForChild(FurnitureDictionary[ID][3]):Clone()
 
@@ -57,16 +61,15 @@ function Object.new(ID, cframe, Player, Plot)
 	end
 
 	--cleanup
-	self.object.AncestryChanged:Connect(function(_, parent))
+	self.Object.AncestryChanged:Connect(function(_, parent)
 		if not parent then
-			local object = SerachObject(FurnitureDictionary[self.ID][1], self.object, self.Owner)
+			local index = SerachObject(FurnitureDictionary[self.ID][1], self.object, self.Owner)
 
-			object = nil
-	end
-
+			index = nil
+		end
+	end)
 
 	return self
 end
-
 
 return Object

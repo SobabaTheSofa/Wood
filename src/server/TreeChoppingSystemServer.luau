@@ -4,6 +4,7 @@ local CollectionService = game:GetService("CollectionService")
 local TCSS = {}
 
 local TreeRegistry = require(script.Parent:WaitForChild("TreeRegistry"))
+local Base = require(script.Parent:WaitForChild("TreeConstructor"))
 
 local function GetBranchFromPart(part)
 	if not part then

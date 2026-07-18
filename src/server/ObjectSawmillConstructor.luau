@@ -28,6 +28,11 @@ function Sawmill:Serialise()
 	else
 		return
 	end
+	print(HttpService:JSONEncode({
+		{ (cfi * TFC):GetComponents() },
+		self.X,
+		self.Y,
+	}))
 
 	return HttpService:JSONEncode({
 		{ (cfi * TFC):GetComponents() },

@@ -6,7 +6,7 @@ local ServerScriptSerivce = game:GetService("ServerScriptService")
 local CollectionService = game:GetService("CollectionService")
 local MetaBreakpointManager = game:GetService("MetaBreakpointManager")
 
-local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer"))
+--local TCSS = require(script.Parent:WaitForChild("TreeChoppingSystemServer"))
 local TreeDictionary = require(script.Parent:WaitForChild("TreeDictionary"))
 
 local TreeConc = {}
@@ -118,7 +118,6 @@ local function RemoveBranchWeldBetween(partA, partB)
 	end
 end
 
-
 function TreeConc:CalculateTargetLength(mode)
 	if mode == "Exponential" then
 		return math.floor(self.MaxLength * (self.LengthMultiplier ^ self.N) * 5 + 0.5) / 5
@@ -130,7 +129,6 @@ function TreeConc:CalculateMaxChildren(mode, dialtion, constant)
 		return math.clamp(math.round((self.N + 1) ^ 2), 0, self.ChildrenLimit)
 	end
 end
-
 
 function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValue, lVolume, setSize)
 	-- note to self a random percentage can be roll when n is 0 to make tree have difrent sizes
@@ -178,9 +176,6 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 
 	self.TargetLeafLength = self.MaxLeafLength * (self.LeafMultiplier ^ self.N)
 	self.TargetLeafRadius = self.MaxLeafRadius * (self.LeafMultiplier ^ self.N)
-
-	self.IgnoreList = OverlapParams.new() --player, specific collison group so on and so on
-	self.IgnoreList.ExcludeInstances = {self.Tree, self.Children, self.ParentingBranch}
 
 	self.TargetLength = self:CalculateTargetLength("Exponential")
 
@@ -288,6 +283,10 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 		self.Leaf = l
 	end
 
+	self.IgnoreList = OverlapParams.new() --player, specific collison group so on and so on
+	self.IgnoreList.ExcludeInstances =
+		{ self.Tree, self.Children, self.ParentingBranch, self.Leaf, workspace:WaitForChild("aaa") }
+
 	return self
 end
 
@@ -368,14 +367,15 @@ function TreeConc:GrowLength() -- growth collision is not nessassary but why the
 		if self:CheckCollision(growAmount) then
 			Branch.Size = Vector3.new(Branch.Size.X, Branch.Size.Y + growAmount, Branch.Size.Z)
 
-		Branch.CFrame = Branch.CFrame * CFrame.new(0, growAmount / 2, 0)
+			Branch.CFrame = Branch.CFrame * CFrame.new(0, growAmount / 2, 0)
 
-		if self.Leaf then
-			self.Leaf.Position += Branch.CFrame.UpVector * growAmount
-		end
+			if self.Leaf then
+				self.Leaf.Position += Branch.CFrame.UpVector * growAmount
+			end
 
-		for _, childBranch in ipairs(self.Children or {}) do
-			childBranch:MoveBy(Branch.CFrame.UpVector * growAmount)
+			for _, childBranch in ipairs(self.Children or {}) do
+				childBranch:MoveBy(Branch.CFrame.UpVector * growAmount)
+			end
 		end
 	end
 end
@@ -388,17 +388,19 @@ function TreeConc:GrowWidth()
 		local growAmount = math.min(growthRate, self.TargetRadius - Branch.Size.X)
 		local newSize = Vector3.new(Branch.Size.X + growAmount, Branch.Size.Y, Branch.Size.Z + growAmount)
 
-		local partInbound = workspace:GetPartBoundsInBox(Branch.CFrame.Positon, newSize, self.IgnoreList)
+		local partInbound = workspace:GetPartBoundsInBox(Branch.CFrame, newSize, self.IgnoreList)
+		print(partInbound)
 		if #partInbound > 0 then
 			self.Isgrowing = false
 		else
-			Branch.Size = Vector3.new(newSize)
+			print("success")
+			Branch.Size = newSize
 		end
 	end
 end
 
 function TreeConc:Grow()
-	if not self.isGrowing then
+	if self.isGrowing then
 		self:GrowLength()
 		self:GrowWidth()
 	end
@@ -427,50 +429,41 @@ function TreeConc:Grow()
 end
 
 function TreeConc:CheckCollision(growAmount)
+	local function CheckBranch(branch, isRoot, offset)
+		local futureCF
+		local futureSize
 
-    local function CheckBranch(branch, isRoot, offset)
+		if isRoot then
+			futureSize = Vector3.new(branch.Tree.Size.X, branch.Tree.Size.Y + growAmount, branch.Tree.Size.Z)
 
-        local futureCF
-        local futureSize
+			futureCF = branch.Tree.CFrame * CFrame.new(0, growAmount / 2, 0)
 
-        if isRoot then
-            futureSize = Vector3.new(
-                branch.Tree.Size.X,
-                branch.Tree.Size.Y + growAmount,
-                branch.Tree.Size.Z
-            )
+			offset = branch.Tree.CFrame.UpVector * growAmount
+		else
+			futureSize = branch.Tree.Size
+			futureCF = branch.Tree.CFrame + offset
+		end
 
-            futureCF = branch.Tree.CFrame * CFrame.new(0, growAmount / 2, 0)
+		local hits = workspace:GetPartBoundsInBox(futureCF, futureSize, branch.IgnoreList)
 
-            offset = branch.Tree.CFrame.UpVector * growAmount
-        else
-            futureSize = branch.Tree.Size
-            futureCF = branch.Tree.CFrame + offset
-        end
+		if #hits > 0 then
+			return true
+		end
 
-        local hits = workspace:GetPartBoundsInBox(
-            futureCF,
-            futureSize,
-            branch.IgnoreList
-        )
+		for _, child in ipairs(branch.Children or {}) do
+			if CheckBranch(child, false, offset) then
+				return true
+			end
+		end
 
-        if #hits > 0 then
-            return true
-        end
+		return false
+	end
 
-        for _, child in ipairs(branch.Children or {}) do
-            if CheckBranch(child, false, offset) then
-                return true
-            end
-        end
-
-        return false
-    end
-
-    return CheckBranch(self, true)
+	--return CheckBranch(self, true)
+	return true
 end
 
-function TreeConc:MoveBy(offset) 
+function TreeConc:MoveBy(offset)
 	self.Tree.Position += offset
 
 	if self.Leaf then
@@ -485,7 +478,7 @@ end
 function TreeConc:Init(BaseEnv) -- unsed requirering is enough, to be remoed if not other init function is neded
 	---self.TreeRegistry = BaseEnv
 
-	return self 
+	return self
 end
 
 return TreeConc

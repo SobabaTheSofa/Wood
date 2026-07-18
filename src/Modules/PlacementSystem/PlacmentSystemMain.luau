@@ -82,9 +82,10 @@ Placement.Constants = {
 }
 
 Placement.IgnoreList = {}
+Placement.PlotRegistry = {}
 
 if isServer then
-	Placement.PlotRegistry = ServerScriptSerivce.Server.ObjectPlayerPlotRegistry
+	Placement.PlotRegistry = require(ServerScriptService.Server.ObjectPlayerPlotRegistry)
 else
 	Placement.PlotRegistry = {}
 end
