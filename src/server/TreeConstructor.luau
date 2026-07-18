@@ -14,7 +14,11 @@ TreeConc.__index = TreeConc
 
 TreeConc.TreeRegistry = require(script.Parent:WaitForChild("TreeRegistry"))
 
-setmetatable(self, TCSS)
+--TreeConc.IgnoreList = OverlapParams.new() --player, specific collison group so on and so on
+--TreeConc.IgnoreList.FilterType = Enum.RaycastFilterType.Exclude
+--TreeConc.IgnoreList.FilterDescendantsInstances = {}
+
+--setmetatable(self, TCSS)
 
 local function GetBranchFromPart(part)
 	if not part then
@@ -121,7 +125,7 @@ function TreeConc:CalculateTargetLength(mode)
 	end
 end
 
-function TreeConc:CalculateMaxChildren(mode)
+function TreeConc:CalculateMaxChildren(mode, dialtion, constant)
 	if mode == "Exponential" then
 		return math.clamp(math.round((self.N + 1) ^ 2), 0, self.ChildrenLimit)
 	end
@@ -129,13 +133,14 @@ end
 
 
 function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValue, lVolume, setSize)
+	-- note to self a random percentage can be roll when n is 0 to make tree have difrent sizes
 	local self = setmetatable({}, TreeConc)
 
-	local class
+	local class = TreeDictionary[Class]
 
-	if typeof(Class) == "string" then
-		class = TreeDictionary[Class]
-	end
+	--if typeof(Class) == "string" then
+	--	class = TreeDictionary[Class]
+	--end
 
 	self.TreeClass = class.Name
 	-- experimental to be removed if not optimised
@@ -173,6 +178,9 @@ function TreeConc.new(Class: string, cframe: CFrame, parentingBranch, n: IntValu
 
 	self.TargetLeafLength = self.MaxLeafLength * (self.LeafMultiplier ^ self.N)
 	self.TargetLeafRadius = self.MaxLeafRadius * (self.LeafMultiplier ^ self.N)
+
+	self.IgnoreList = OverlapParams.new() --player, specific collison group so on and so on
+	self.IgnoreList.ExcludeInstances = {self.Tree, self.Children, self.ParentingBranch}
 
 	self.TargetLength = self:CalculateTargetLength("Exponential")
 
@@ -350,14 +358,15 @@ function TreeConc:GrowLeaf()
 	end
 end
 
-function TreeConc:GrowLength()
+function TreeConc:GrowLength() -- growth collision is not nessassary but why the heck not, more lag for the server!!!!
 	local growthRate = 0.2
 	local Branch = self.Tree
 
 	if Branch.Size.Y < self.TargetLength then
 		local growAmount = math.min(growthRate, self.TargetLength - Branch.Size.Y)
 
-		Branch.Size = Vector3.new(Branch.Size.X, Branch.Size.Y + growAmount, Branch.Size.Z)
+		if self:CheckCollision(growAmount) then
+			Branch.Size = Vector3.new(Branch.Size.X, Branch.Size.Y + growAmount, Branch.Size.Z)
 
 		Branch.CFrame = Branch.CFrame * CFrame.new(0, growAmount / 2, 0)
 
@@ -377,16 +386,23 @@ function TreeConc:GrowWidth()
 
 	if Branch.Size.X < self.TargetRadius then
 		local growAmount = math.min(growthRate, self.TargetRadius - Branch.Size.X)
+		local newSize = Vector3.new(Branch.Size.X + growAmount, Branch.Size.Y, Branch.Size.Z + growAmount)
 
-		Branch.Size = Vector3.new(Branch.Size.X + growAmount, Branch.Size.Y, Branch.Size.Z + growAmount)
+		local partInbound = workspace:GetPartBoundsInBox(Branch.CFrame.Positon, newSize, self.IgnoreList)
+		if #partInbound > 0 then
+			self.Isgrowing = false
+		else
+			Branch.Size = Vector3.new(newSize)
+		end
 	end
 end
 
 function TreeConc:Grow()
-	if not self.isGrowing then return end 
+	if not self.isGrowing then
+		self:GrowLength()
+		self:GrowWidth()
+	end
 
-	self:GrowLength()
-	self:GrowWidth()
 	self:GrowLeaf()
 
 	if #self.Children == 0 and self.MaxSubBranches > self.N then
@@ -408,53 +424,53 @@ function TreeConc:Grow()
 			childBranch:Grow()
 		end
 	end
-
-	if #self.children > 0 and self.hasBended and self.N >= self.BranchBendingLimit the
-		if math.random(1,100) > 67 then -- to be determined
-
-		end
-	end	
 end
 
-function TreeConc:BendBranch()
-	local Ylength = self.Tree.Size.y
-	local branchCFrame = self.Tree.CFrame
+function TreeConc:CheckCollision(growAmount)
 
+    local function CheckBranch(branch, isRoot, offset)
 
-	self.Tree.Size.y/2 --as of current is now 50/50 split to be randomised
-	local CloneP = self.Tree:Clone()
+        local futureCF
+        local futureSize
 
-	branchCFrame = self.Tree:ToWorldSpace(CFrame.new(0,-self.Tree.Size.y/2, 0)) -- to be resaerched: use the direction of upvector to simplify and minimalise
-	-- apply position changes to clone brnach 
+        if isRoot then
+            futureSize = Vector3.new(
+                branch.Tree.Size.X,
+                branch.Tree.Size.Y + growAmount,
+                branch.Tree.Size.Z
+            )
 
+            futureCF = branch.Tree.CFrame * CFrame.new(0, growAmount / 2, 0)
 
-	-- apply rotation to chilldren assembly
+            offset = branch.Tree.CFrame.UpVector * growAmount
+        else
+            futureSize = branch.Tree.Size
+            futureCF = branch.Tree.CFrame + offset
+        end
+
+        local hits = workspace:GetPartBoundsInBox(
+            futureCF,
+            futureSize,
+            branch.IgnoreList
+        )
+
+        if #hits > 0 then
+            return true
+        end
+
+        for _, child in ipairs(branch.Children or {}) do
+            if CheckBranch(child, false, offset) then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    return CheckBranch(self, true)
 end
 
-function TreeConc:RotateAssembly(branch)
-	local Branch = GetBranchFromPart(branch)
-	local originalCFrame = Branch.Tree.CFrame
-
-	for i, y in pairs(Branch) do 
-		if i == "Tree" then 
-			self:ApplyRotation(Branch, i.Tree)
-		end
-
-		if i == "Children" then
-			for i, y in pairs(i) do
-				--recursive
-				self:RotateAssembly(i)
-			end
-		end
-	end
-	
-end
-
-function TreeConc:ApplyRotation(originalpart, part)
-	--- to be implement please done it by 20/5
-end
-
-function TreeConc:MoveBy(offset)
+function TreeConc:MoveBy(offset) 
 	self.Tree.Position += offset
 
 	if self.Leaf then
