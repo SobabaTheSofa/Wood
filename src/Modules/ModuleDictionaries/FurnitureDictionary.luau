@@ -1,4 +1,5 @@
 return {
+	--Test Objects
 	[1] = { true, "Sawmill", "SawmillTest1" },
 	[2] = nil,
 	[3] = nil,
@@ -8,7 +9,8 @@ return {
 	[7] = nil,
 	[8] = nil,
 	[9] = nil,
-	[10] = nil,
+	--Reserve for common object ^^^^
+	[10] = {false, "LooseObject", "Ball1"},
 	[11] = nil,
 	[12] = nil,
 	[13] = nil,

@@ -2,9 +2,8 @@ local ServerScriptSerivce = game:GetService("ServerScriptService")
 local CollectionService = game:GetService("CollectionService")
 
 local TCSS = {}
-local Base = nil
 
-local TreeRegistry = {}
+local TreeRegistry = require(script.Parent:WaitForChild("TreeRegistry"))
 
 local function GetBranchFromPart(part)
 	if not part then
@@ -751,11 +750,11 @@ function TCSS:IntersectFromNotch(part)
 	Interesct(part.Parent, CutY)
 end
 
-function TCSS:Init(BaseEnv)
-	Base = BaseEnv
-	TreeRegistry = BaseEnv.TreeRegistry
-
-	return self
-end
+--function TCSS:Init(BaseEnv) to be removed init
+--	Base = BaseEnv
+--	TreeRegistry = BaseEnv.TreeRegistry
+--
+--	return self
+--end
 
 return TCSS

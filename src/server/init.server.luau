@@ -1,6 +1,8 @@
 local TreeRegistry = require(script:WaitForChild("TreeRegistry"))
-local Constructor, TCSS = require(script:WaitForChild("TreeConstructor")):Init(TreeRegistry)
+local Constructor = require(script:WaitForChild("TreeConstructor")):Init(TreeRegistry)
 local ZoneConstructor = require(script:WaitForChild("ZoneConStructor")):Init(Constructor)
+
+local TCSS = require(script:WaitForChild("TreeChoppingSystemServer"))
 
 game:GetService("ReplicatedStorage"):WaitForChild("A1").OnServerEvent:Connect(function(player, hitData, Notch)
 	if hitData then

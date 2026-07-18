@@ -1,5 +1,5 @@
 return {
-	Oak = {
+	Oak = { -- default format copy to create more units
 		Name = "Oak",
 
 		MaxLength = 10,
@@ -11,6 +11,8 @@ return {
 		LeafMultiplier = 1.00,
 		LengthMultiplier = 0.8,
 		TrunkRadiusMultiplier = 1,
+
+		BranchBendingLimit = 2,
 
 		LeafMaterial = Enum.Material.Grass,
 		LeafColour = Color3.fromRGB(18, 82, 28),

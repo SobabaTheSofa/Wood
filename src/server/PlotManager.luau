@@ -8,7 +8,7 @@ local PlacementClass = require(
 	ReplicatedStorage:WaitForChild("Modules"):WaitForChild("PlacementSystem"):WaitForChild("PlacmentSystemMain")
 )
 
-local Plot = ReplicatedStorage:WaitForChild("Plot"):WaitForChild("Plot")
+local Plot = ReplicatedStorage:WaitForChild("Plot"):WaitForChild("Plot") -- be constructed per person
 local Objects = ReplicatedStorage:WaitForChild("Objects")
 local LooseObjects = ReplicatedStorage:WaitForChild("LooseObjects")
 
@@ -20,12 +20,33 @@ local Labaries = script.Parent:WaitForChild("ServerLibaries")
 local ProfileStore = require(Labaries.ProfileStore)
 local PlotTemplate = require(Labaries.Template)
 
-local FurnitureDictionary = require(script.Parent:WaitForChild("FurnitureDictionary"))
+local FurnitureDictionary = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("PlacementSystem"):WaitForChild("FurnitureDictionary"))
 
 local PlotManager = {}
 
+local FixedPlotPosition = {
+	Vector3.new(0,0,0)
+}
+
+PlotManager.hasTaken= {
+	[1] = false
+	[2] = false,
+	[3] = false,
+	[4] = false,
+}
 PlotManager.PlayersPlots = {}
 PlotManager.PlayersProfiles = {}
+
+local function LoadObjects(ID, ...)
+	local ConstructorID = FurnitureDictionary[ID][2]
+	local Constructor = require(script.Parent:WaitForChild("Object" .. ConstructorID .. "Constructor"))
+
+	local Object = Constructor:FromSerialise(ID, ...)
+
+
+	return Object
+end
+
 
 local function GetStoreName(plotNumber: number)
 	if plotNumber == 1 or plotNumber == 2 or plotNumber == 3 then
@@ -36,6 +57,8 @@ local function GetStoreName(plotNumber: number)
 	end
 end
 
+
+-- to be remove, object superclass has it own serialisatioin function this is uneeded
 function PlotManager:SerialiseFurniture(player)
 	local PlayersPlot = self.PlayersPlots[player]
 	if not PlayersPlot or not PlayersPlot.PrimaryPart then
@@ -104,8 +127,8 @@ end
 function PlotManager:Serialise(player) end
 
 function PlotManager:Load(player, plotNumber)
-	if self.PlayersProfiles[player] then
-		warn("Player already has a plot loaded.")
+	if self.PlayersProfiles[player] and not self.hasTaken[plotNumber] then
+		warn("Player already has a plot loaded, or plot has been taken.")
 		return
 		--return self.PlayersProfiles[player]
 		--elseif self.PlayersPlots[plotNumber] then -- add check function later
@@ -144,7 +167,7 @@ function PlotManager:Load(player, plotNumber)
 		-- Load plot
 		local ClonedPlot = Plot:Clone()
 		ClonedPlot.Parent = workspace
-		ClonedPlot:PivotTo(CFrame.new(0, 0, 0))
+		ClonedPlot:PivotTo(FixedPlotPosition[plotNumber])
 
 		local MasterPlotCF = ClonedPlot.PrimaryPart.CFrame
 		local PlacedObjects = ClonedPlot.PlacedObjects
@@ -154,22 +177,22 @@ function PlotManager:Load(player, plotNumber)
 			PlotNumber = plotNumber,
 		}
 		PlacementClass.PlotRegistry[player] = {
+
 			Plot = ClonedPlot,
 			Furniture = {},
-			LooseObjects = {},
+			LooseObject = {},
 			Sawmill = {},
+
+			-- should be handle why loop through furniture dictionaery
 		}
 		-- Load sawmill
 		local Profile = self.PlayersProfiles[player]
 		if Profile then
-			local Sawmill = Profile.Data.Plot.Sawmill or {}
-			print(Sawmill)
-
-			for STable, ID in pairs(Sawmill) do
-				print(STable)
+			for i in ipairs (Profile.DataPlot)
+				for STable, ID in pairs(Profile.DataPlot[i] or {}) do
 				local OBJ =
-					ObjectSawmillConstructor:FromSerialise(ID, STable, player, PlacementClass.PlotRegistry[player].Plot)
-				table.insert(PlacementClass.PlotRegistry[player].Sawmill, OBJ)
+					LoadObjects(ID, STable, player, PlacementClass.PlotRegistry[player].Plot)
+				table.insert(PlacementClass.PlotRegistry[player].tostring(FurnitureDictionary[ID][2]), OBJ)
 			end
 		end
 
@@ -234,10 +257,20 @@ function PlotManager:Unload(player)
 		profile.Data.Plot.Sawmill[value:Serialise()] = value.ID
 	end
 
-	self.PlayersPlots[player].Plot:Destroy() -- free up plot for other players via .PlotNumber
+	self.PlayersPlots[player].Plot:Destroy()
+	self.hasTaken[GetPlayerPlot[player]] = false
 	self.PlayersPlots[player] = nil
 
 	profile:EndSession()
 	self.PlayersProfiles[player] = nil
 end
+
+local function GetPlayerPlot(plrname)
+	for i, y in pairs(self.PlayersPlots)
+		if i == plrname then
+			return y.PlotNumber
+		end
+	end
+end 
+
 return PlotManager
